@@ -1,0 +1,25 @@
+# The base URL for the service you are interacting with.
+baseUrl = "https://www.grouprides.cc/api/sign-up?_data=routes/api/sign-up"
+
+# The ride ID on grouprides.
+rideId = "sattelclub."
+
+# How often the application should check for updates.
+checkingInterval = { secs = 1, nanos = 0 }
+
+# The day of the week to perform the check.
+# Chrono can parse full day names ("Friday") or three-letter abbreviations ("Fri").
+signupWeekday = "Thu"
+
+# The day of the week the ride is happening.
+rideWeekday = "Tue"
+
+# The time of day (in UTC) to start checking, in HH:MM:SS format.
+checkFrom = "17:30:00"
+
+# A list of users to sign up for rides.
+[[users]]
+firstName = ""
+surname = ""
+email = ""
+enabled = true
