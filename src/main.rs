@@ -8,8 +8,12 @@ static DEFAULT_CONFIG_FILE: &str = include_str!("config/sattelclub.default.toml"
 
 fn main() {
     let config = Config::from_config_file();
+    let config = unwrap_or_exit(config);
+    
+}
 
-    let config = match config {
+fn unwrap_or_exit<T>(config: Result<T, ConfigError>) -> T {
+    match config {
         Ok(config) => config,
         Err(e) => {
             let e = match e {
@@ -47,5 +51,5 @@ fn main() {
             }
             exit(1)
         }
-    };
+    }
 }
