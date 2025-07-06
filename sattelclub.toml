@@ -12,7 +12,7 @@ checkingInterval = { secs = 1, nanos = 0 }
 signupWeekday = "Thu"
 
 # The day of the week the ride is happening.
-rideWeekday = "Tue"
+rideWeekday = "Wed"
 
 # The time of day (in UTC) to start checking, in HH:MM:SS format.
 checkFrom = "17:30:00"

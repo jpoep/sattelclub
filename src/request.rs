@@ -1,10 +1,10 @@
-mod groupride_response;
+pub mod groupride_response;
 
-use std::collections::HashMap;
+use std::{collections::HashMap, error::Error};
 
 use chrono::{Datelike, NaiveDate};
 use derive_more::Display;
-use reqwest::{Client, Error};
+use reqwest::Client;
 
 use crate::{
     config::{Config, User},
@@ -13,9 +13,8 @@ use crate::{
 
 #[derive(Display)]
 pub enum SignupError {
-    Other(Error),
     ErrorResponse(GrouprideErrorResponse),
-    UnknownResponse(String),
+    Unknown(Box<dyn Error>),
 }
 
 impl SignupError {
@@ -23,6 +22,13 @@ impl SignupError {
         SignupError::ErrorResponse(GrouprideErrorResponse::from_message(message))
     }
 }
+
+#[derive(Debug, Display)]
+pub struct UnknownResponseError(pub String);
+
+impl Error for UnknownResponseError {}
+
+pub type SignupResponse = Result<(), SignupError>;
 
 pub struct SignupRequest {
     pub url: String,
@@ -58,19 +64,22 @@ impl SignupRequest {
             .collect()
     }
 
-    pub async fn make_request(&self) -> Result<(), SignupError> {
+    pub async fn make_request(&self) -> SignupResponse {
         let client = Client::new();
 
         let response = client.post(&self.url).form(&self.form_data()).send().await;
-        let response = response.map_err(|e| SignupError::Other(e))?;
+        let response = response.map_err(|e| SignupError::Unknown(Box::new(e)))?;
         let response = response
             .error_for_status()
-            .map_err(|e| SignupError::UnknownResponse(e.to_string()))?;
+            .map_err(|e| SignupError::Unknown(Box::new(e)))?;
 
-        let text = response.text().await.map_err(|e| SignupError::Other(e))?;
+        let text = response
+            .text()
+            .await
+            .map_err(|e| SignupError::Unknown(Box::new(e)))?;
 
         let groupride_response: GrouprideResponse = serde_json::from_str(&text)
-            .map_err(|_| SignupError::UnknownResponse(text.to_string()))?;
+            .map_err(|_| SignupError::Unknown(Box::new(UnknownResponseError(text.to_string()))))?;
 
         if let Some(error) = groupride_response.error {
             Err(SignupError::error_response_from_message(error))

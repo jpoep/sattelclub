@@ -3,10 +3,12 @@ use std::process::exit;
 use crate::{
     config::{CONFIG_FILE_NAME, Config, ConfigError, get_first_config_dir},
     request::SignupRequest,
+    state::{SignupState, State},
 };
 
 pub mod config;
 pub mod request;
+pub mod state;
 
 static DEFAULT_CONFIG_FILE: &str = include_str!("config/sattelclub.default.toml");
 
@@ -21,16 +23,37 @@ async fn main() {
             request.date.to_string(),
             request.user.name()
         );
-        match request.make_request().await {
-            Ok(()) => {
-                println!("Signup successful for {}", request.user.name());
-            }
-            Err(e) => {
-                eprintln!(
-                    "Error signing up {} for ride on {}: {}",
+        let mut state = SignupState::new(request.user.clone());
+        while matches!(state.state, State::Pending) {
+            // Wait for the configured checking interval before making the next request.
+            tokio::time::sleep(config.checking_interval).await;
+            let response = request.make_request().await;
+            state.apply_result(response);
+            if let State::Done(ref reason) = state.state {
+                match reason {
+                    state::Reason::Success => {
+                        println!(
+                            "Successfully signed up {} for ride on {}",
+                            request.user.name(),
+                            request.date
+                        );
+                    }
+                    state::Reason::Full => {
+                        println!(
+                            "Ride is full, could not sign up {} for ride on {}",
+                            request.user.name(),
+                            request.date
+                        );
+                    }
+                    state::Reason::Error(e) => {
+                        eprintln!("Error signing up {}: {:?}", request.user.name(), e);
+                    }
+                }
+            } else {
+                println!(
+                    "Still pending signup for {} on {}",
                     request.user.name(),
-                    request.date,
-                    e
+                    request.date
                 );
             }
         }
