@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct User {
     pub first_name: String,
@@ -9,3 +9,8 @@ pub struct User {
     pub enabled: bool,
 }
 
+impl User {
+    pub fn name(&self) -> String {
+        format!("{} {}", self.first_name, self.surname)
+    }
+}

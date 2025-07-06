@@ -5,8 +5,9 @@ use derive_more::Display;
 use serde::{Deserialize, Serialize};
 use toml::from_str;
 
-use crate::config::{path::find_config_path, user::User};
+use crate::config::path::find_config_path;
 pub use path::{CONFIG_FILE_NAME, get_first_config_dir};
+pub use user::User;
 
 mod path;
 mod user;

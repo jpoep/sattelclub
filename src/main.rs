@@ -1,15 +1,40 @@
 use std::process::exit;
 
-use crate::config::{CONFIG_FILE_NAME, Config, ConfigError, get_first_config_dir};
+use crate::{
+    config::{CONFIG_FILE_NAME, Config, ConfigError, get_first_config_dir},
+    request::SignupRequest,
+};
 
 pub mod config;
+pub mod request;
 
 static DEFAULT_CONFIG_FILE: &str = include_str!("config/sattelclub.default.toml");
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let config = Config::from_config_file();
     let config = unwrap_or_exit(config);
-    
+    let requests = SignupRequest::from_config(&config);
+    for request in requests.iter() {
+        println!(
+            "Requesting signup for ride on {}: {}",
+            request.date.to_string(),
+            request.user.name()
+        );
+        match request.make_request().await {
+            Ok(()) => {
+                println!("Signup successful for {}", request.user.name());
+            }
+            Err(e) => {
+                eprintln!(
+                    "Error signing up {} for ride on {}: {}",
+                    request.user.name(),
+                    request.date,
+                    e
+                );
+            }
+        }
+    }
 }
 
 fn unwrap_or_exit<T>(config: Result<T, ConfigError>) -> T {
