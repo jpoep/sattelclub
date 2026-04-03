@@ -1,6 +1,6 @@
 use std::{error::Error, time::Duration};
 
-use chrono::{NaiveTime, Weekday};
+use chrono::{Datelike, Local, NaiveDate, NaiveTime, Weekday};
 use derive_more::Display;
 use serde::{Deserialize, Serialize};
 use toml::from_str;
@@ -59,6 +59,17 @@ impl Config {
         let path = Self::config_dir().join(TOKENS_FILE_NAME);
         let content = toml::to_string(cache).expect("SessionCache is always serialisable");
         std::fs::write(path, content).map_err(ConfigError::IoError)
+    }
+
+    /// Returns the date of the next occurrence of `ride_weekday` on or after
+    /// today (local time).
+    pub fn get_next_ride_date(&self) -> NaiveDate {
+        let today = Local::now().date_naive();
+        let mut date = today;
+        while date.weekday() != self.ride_weekday {
+            date = date.succ_opt().expect("date arithmetic overflowed");
+        }
+        date
     }
 }
 
