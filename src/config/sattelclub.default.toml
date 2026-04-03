@@ -1,9 +1,3 @@
-# The base URL for the service you are interacting with.
-baseUrl = "https://www.grouprides.cc/api/sign-up?_data=routes/api/sign-up"
-
-# The ride ID on grouprides.
-rideId = "sattelclub."
-
 # How often the application should check for updates.
 checkingInterval = { secs = 1, nanos = 0 }
 

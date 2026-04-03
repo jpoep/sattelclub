@@ -25,7 +25,6 @@ async fn main() {
         );
         let mut state = SignupState::new(request.user.clone());
         while matches!(state.state, State::Pending) {
-            // Wait for the configured checking interval before making the next request.
             tokio::time::sleep(config.checking_interval).await;
             let response = request.make_request().await;
             state.apply_result(response);

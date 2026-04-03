@@ -16,8 +16,6 @@ mod user;
 #[serde(rename_all = "camelCase")]
 pub struct Config {
     pub users: Vec<User>,
-    pub base_url: String,
-    pub ride_id: String,
     pub checking_interval: Duration,
     pub signup_weekday: Weekday,
     pub ride_weekday: Weekday,
