@@ -1,7 +1,7 @@
-# How often the application should check for updates.
-checkingInterval = { secs = 1, nanos = 0 }
+# How often the application should check for updates (default: 30 seconds).
+checkingInterval = { secs = 30, nanos = 0 }
 
-# The day of the week to perform the check.
+# The day of the week to perform the signup check.
 # Chrono can parse full day names ("Friday") or three-letter abbreviations ("Fri").
 signupWeekday = "Thu"
 
@@ -10,6 +10,10 @@ rideWeekday = "Tue"
 
 # The time of day (in UTC) to start checking, in HH:MM:SS format.
 checkFrom = "17:30:00"
+
+[strava]
+# The numeric Strava club ID (visible in the club URL: strava.com/clubs/<clubId>).
+clubId = ""
 
 # A list of users to sign up for rides.
 [[users]]

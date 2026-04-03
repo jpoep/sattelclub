@@ -7,10 +7,14 @@ use toml::from_str;
 
 use crate::config::path::find_config_path;
 pub use path::{CONFIG_FILE_NAME, get_first_config_dir};
+pub use strava::{SessionCache, StravaConfig};
 pub use user::User;
 
 mod path;
+pub mod strava;
 mod user;
+
+static TOKENS_FILE_NAME: &str = "tokens.toml";
 
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -20,20 +24,41 @@ pub struct Config {
     pub signup_weekday: Weekday,
     pub ride_weekday: Weekday,
     pub check_from: NaiveTime,
+    pub strava: StravaConfig,
 }
 
 impl Config {
     pub fn from_config_file() -> Result<Self, ConfigError> {
         find_config_path()
             .map(|path| {
-                let config_content =
-                    std::fs::read_to_string(path).map_err(|e| ConfigError::IoError(e))?;
-                from_str(&config_content).map_err(|e| ConfigError::ParseError(e))
+                let config_content = std::fs::read_to_string(path).map_err(ConfigError::IoError)?;
+                from_str(&config_content).map_err(ConfigError::ParseError)
             })
             .ok_or(ConfigError::IoError(std::io::Error::new(
                 std::io::ErrorKind::NotFound,
                 PathError,
             )))?
+    }
+
+    /// Returns the directory that contains the config file, or falls back to
+    /// the first writable config directory.
+    fn config_dir() -> std::path::PathBuf {
+        use crate::config::path::{find_config_path, get_first_config_dir};
+        find_config_path()
+            .and_then(|p| p.parent().map(|d| d.to_path_buf()))
+            .unwrap_or_else(get_first_config_dir)
+    }
+
+    pub fn load_session_cache(&self) -> Result<SessionCache, ConfigError> {
+        let path = Self::config_dir().join(TOKENS_FILE_NAME);
+        let content = std::fs::read_to_string(&path).map_err(ConfigError::IoError)?;
+        toml::from_str(&content).map_err(ConfigError::ParseError)
+    }
+
+    pub fn save_session_cache(&self, cache: &SessionCache) -> Result<(), ConfigError> {
+        let path = Self::config_dir().join(TOKENS_FILE_NAME);
+        let content = toml::to_string(cache).expect("SessionCache is always serialisable");
+        std::fs::write(path, content).map_err(ConfigError::IoError)
     }
 }
 
@@ -53,9 +78,6 @@ mod tests {
 
     #[test]
     fn default_config_is_deserializable() {
-        // This test ensures that the default TOML config file, which serves as a template
-        // for users, is always valid and can be deserialized into the Config struct.
-        // The path is relative to this file (sattelclub/src/config.rs).
         let default_config_content = include_str!("config/sattelclub.default.toml");
         let result: Result<Config, _> = from_str(default_config_content);
         assert!(
